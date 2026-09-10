@@ -1,16 +1,14 @@
-
-const API_URL = "https://jsonplaceholder.typicode.com/users";
+const API = "https://jsonplaceholder.typicode.com/users";
 
 export const fetchUser = async () => {
   const controller = new AbortController();
 
-  // Abort the request after 5 seconds
   const timeoutId = setTimeout(() => {
     controller.abort();
   }, 5000);
 
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(API, {
       signal: controller.signal,
     });
 
@@ -18,7 +16,9 @@ export const fetchUser = async () => {
       throw new Error("Failed to fetch users");
     }
 
-    const data = await response.json();
+    // Return raw JSON text
+    // JSON parsing will happen inside the Web Worker
+    const data = await response.text();
 
     return data;
   } catch (error) {
@@ -31,4 +31,3 @@ export const fetchUser = async () => {
     clearTimeout(timeoutId);
   }
 };
-

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { fetchUser } from "./service/api";
 import SkeletonLoader from "./components/Loader";
@@ -9,21 +8,52 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Create Web Worker
+    const worker = new Worker(
+      new URL("./works/dataWorker.js", import.meta.url),
+      { type: "module" }
+    );
+
+    // Receive processed data from Web Worker
+    worker.onmessage = (event) => {
+      const { type, payload } = event.data;
+
+      if (type === "PROCESS_SUCCESS") {
+        setUsers(payload);
+        setLoading(false);
+      }
+
+      if (type === "PROCESS_ERROR") {
+        setError("Service Unavailable");
+        setLoading(false);
+      }
+    };
+
     const loadUsers = async () => {
       try {
         setLoading(true);
         setError("");
 
+        // Fetch raw JSON text
         const data = await fetchUser();
-        setUsers(data);
+
+        // Send data to Web Worker
+        worker.postMessage({
+          type: "PROCESS_USERS",
+          payload: data,
+        });
       } catch (error) {
         setError("Service Unavailable");
-      } finally {
         setLoading(false);
       }
     };
 
     loadUsers();
+
+    // Clean up Worker
+    return () => {
+      worker.terminate();
+    };
   }, []);
 
   return (
@@ -50,4 +80,3 @@ function App() {
 }
 
 export default App;
-
