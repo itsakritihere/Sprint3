@@ -1,20 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { fetchUser } from "./service/api";
 import SkeletonLoader from "./components/Loader";
+import "./App.css";
 
 function App() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    // Create Web Worker
+  const loadUsers = useCallback(() => {
     const worker = new Worker(
       new URL("./works/dataWorker.js", import.meta.url),
       { type: "module" }
     );
 
-    // Receive processed data from Web Worker
     worker.onmessage = (event) => {
       const { type, payload } = event.data;
 
@@ -29,44 +29,80 @@ function App() {
       }
     };
 
-    const loadUsers = async () => {
+    (async () => {
       try {
         setLoading(true);
         setError("");
-
-        // Fetch raw JSON text
         const data = await fetchUser();
-
-        // Send data to Web Worker
-        worker.postMessage({
-          type: "PROCESS_USERS",
-          payload: data,
-        });
-      } catch (error) {
+        worker.postMessage({ type: "PROCESS_USERS", payload: data });
+      } catch (err) {
         setError("Service Unavailable");
         setLoading(false);
       }
-    };
+    })();
 
-    loadUsers();
-
-    // Clean up Worker
-    return () => {
-      worker.terminate();
-    };
+    return worker;
   }, []);
 
+  useEffect(() => {
+    const worker = loadUsers();
+    return () => worker.terminate();
+  }, [loadUsers]);
+
+  const filteredUsers = useMemo(() => {
+    if (!search.trim()) return users;
+    const q = search.toLowerCase();
+    return users.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q)
+    );
+  }, [users, search]);
+
+  const handleRefresh = () => {
+    loadUsers();
+  };
+
   return (
-    <div>
-      <h1>API Infrastructure Pipeline</h1>
+    <div className="app-container">
+      <header className="app-header">
+        <h1>API Infrastructure Pipeline</h1>
+        <div className="header-actions">
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            disabled={loading}
+          />
+          <button onClick={handleRefresh} disabled={loading}>
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
+        {!loading && !error && (
+          <p className="user-count">
+            {filteredUsers.length} user{filteredUsers.length !== 1 ? "s" : ""}
+            {search && ` matching "${search}"`}
+          </p>
+        )}
+      </header>
 
       {loading && <SkeletonLoader />}
 
-      {error && <p>{error}</p>}
+      {error && (
+        <div className="error-banner">
+          <p>{error}</p>
+          <button onClick={handleRefresh}>Try again</button>
+        </div>
+      )}
 
-      {!loading && !error && (
+      {!loading && !error && filteredUsers.length === 0 && (
+        <p className="empty-state">No users found.</p>
+      )}
+
+      {!loading && !error && filteredUsers.length > 0 && (
         <div className="user-list">
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <div className="user-card" key={user.id}>
               <h3>{user.name}</h3>
               <p>{user.email}</p>
