@@ -60,8 +60,15 @@ body {
   border-radius: var(--radius);
   font-size: 0.95rem;
   background: var(--surface);
+  color: var(--ink);              /* ADD THIS */
+  caret-color: var(--ink);        /* ADD THIS */
   outline: none;
   transition: border-color 0.15s ease;
+}
+
+.header-actions input::placeholder {
+  color: var(--ink-soft);
+  opacity: 1;
 }
 
 .header-actions input:focus {

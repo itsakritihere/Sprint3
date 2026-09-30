@@ -65,27 +65,34 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <h1>API Infrastructure Pipeline</h1>
-        <div className="header-actions">
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            disabled={loading}
-          />
-          <button onClick={handleRefresh} disabled={loading}>
-            {loading ? "Refreshing..." : "Refresh"}
-          </button>
-        </div>
-        {!loading && !error && (
-          <p className="user-count">
-            {filteredUsers.length} user{filteredUsers.length !== 1 ? "s" : ""}
-            {search && ` matching "${search}"`}
-          </p>
-        )}
-      </header>
+     <header className="app-header">
+  <h1>API Infrastructure Pipeline</h1>
+
+  <p className="app-description">
+    Fetching user information from an external API, processing the response
+    in a background Web Worker, and displaying user details.
+  </p>
+  <div className="header-actions">
+    <input
+      type="text"
+      placeholder="Search users..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+
+    <button onClick={handleRefresh} disabled={loading}>
+      {loading ? "Refreshing..." : "Refresh"}
+    </button>
+  </div>
+
+  {!loading && !error && (
+    <p className="user-count">
+      {filteredUsers.length} user
+      {filteredUsers.length !== 1 ? "s" : ""}
+      {search && ` matching "${search}"`}
+    </p>
+  )}
+</header>
 
       {loading && <SkeletonLoader />}
 
